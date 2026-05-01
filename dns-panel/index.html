@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DNS Manager — SafeLine</title>
+  <meta name="description" content="DNS Management Panel to manage A, CNAME, and MX records securely behind SafeLine WAF." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <!-- Sidebar -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <div class="logo">
+        <div class="logo-icon">&#9654;&#9654;</div>
+        <span class="logo-text">DNS<span class="logo-accent">Manager</span></span>
+      </div>
+      <button class="sidebar-toggle" id="sidebarToggle" aria-label="Toggle Sidebar">&#9776;</button>
+    </div>
+    <nav class="sidebar-nav">
+      <ul>
+        <li class="nav-item active" data-section="dashboard" onclick="navigate('dashboard', this)">
+          <span class="nav-icon">&#9635;</span><span class="nav-label">Dashboard</span>
+        </li>
+        <li class="nav-item" data-section="records" onclick="navigate('records', this)">
+          <span class="nav-icon">&#9670;</span><span class="nav-label">DNS Records</span>
+          <span class="badge" id="totalBadge">0</span>
+        </li>
+        <li class="nav-item" data-section="a-records" onclick="navigate('a-records', this)">
+          <span class="nav-icon type-a">A</span><span class="nav-label">A Records</span>
+        </li>
+        <li class="nav-item" data-section="cname-records" onclick="navigate('cname-records', this)">
+          <span class="nav-icon type-cname">C</span><span class="nav-label">CNAME Records</span>
+        </li>
+        <li class="nav-item" data-section="mx-records" onclick="navigate('mx-records', this)">
+          <span class="nav-icon type-mx">M</span><span class="nav-label">MX Records</span>
+        </li>
+        <li class="nav-item" data-section="settings" onclick="navigate('settings', this)">
+          <span class="nav-icon">&#9881;</span><span class="nav-label">Settings</span>
+        </li>
+      </ul>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="safeline-badge">
+        <span class="shield">&#9036;</span>
+        <span>Protected by SafeLine</span>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="main" id="main">
+    <!-- Top Bar -->
+    <header class="topbar">
+      <div class="topbar-left">
+        <h1 class="page-title" id="pageTitle">Dashboard</h1>
+        <div class="breadcrumb" id="breadcrumb">Home / Dashboard</div>
+      </div>
+      <div class="topbar-right">
+        <div class="search-box">
+          <span class="search-icon">&#128269;</span>
+          <input type="text" id="globalSearch" placeholder="Search records…" oninput="globalSearchRecords(this.value)" />
+        </div>
+        <button class="btn btn-primary" onclick="openModal()">
+          <span>+</span> Add Record
+        </button>
+      </div>
+    </header>
+
+    <!-- Sections -->
+
+    <!-- Dashboard -->
+    <section class="section active" id="section-dashboard">
+      <div class="stats-grid">
+        <div class="stat-card" onclick="navigate('a-records', document.querySelector('[data-section=a-records]'))">
+          <div class="stat-icon type-a">A</div>
+          <div class="stat-info">
+            <div class="stat-value" id="stat-a">0</div>
+            <div class="stat-label">A Records</div>
+          </div>
+          <div class="stat-arrow">&#8594;</div>
+        </div>
+        <div class="stat-card" onclick="navigate('cname-records', document.querySelector('[data-section=cname-records]'))">
+          <div class="stat-icon type-cname">C</div>
+          <div class="stat-info">
+            <div class="stat-value" id="stat-cname">0</div>
+            <div class="stat-label">CNAME Records</div>
+          </div>
+          <div class="stat-arrow">&#8594;</div>
+        </div>
+        <div class="stat-card" onclick="navigate('mx-records', document.querySelector('[data-section=mx-records]'))">
+          <div class="stat-icon type-mx">M</div>
+          <div class="stat-info">
+            <div class="stat-value" id="stat-mx">0</div>
+            <div class="stat-label">MX Records</div>
+          </div>
+          <div class="stat-arrow">&#8594;</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon total">&#8721;</div>
+          <div class="stat-info">
+            <div class="stat-value" id="stat-total">0</div>
+            <div class="stat-label">Total Records</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-grid">
+        <div class="card">
+          <div class="card-header">
+            <h2>Recent Activity</h2>
+          </div>
+          <div class="activity-list" id="activityList">
+            <div class="empty-state">No activity yet</div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header">
+            <h2>Record Distribution</h2>
+          </div>
+          <div class="donut-chart-wrap">
+            <svg id="donutChart" viewBox="0 0 120 120" class="donut-chart">
+              <circle cx="60" cy="60" r="45" fill="none" stroke="#1e2535" stroke-width="20" />
+              <circle id="donut-a" cx="60" cy="60" r="45" fill="none" stroke="var(--accent-a)" stroke-width="20" stroke-dasharray="0 283" transform="rotate(-90 60 60)" />
+              <circle id="donut-cname" cx="60" cy="60" r="45" fill="none" stroke="var(--accent-cname)" stroke-width="20" stroke-dasharray="0 283" transform="rotate(-90 60 60)" />
+              <circle id="donut-mx" cx="60" cy="60" r="45" fill="none" stroke="var(--accent-mx)" stroke-width="20" stroke-dasharray="0 283" transform="rotate(-90 60 60)" />
+            </svg>
+            <div class="donut-legend">
+              <div class="legend-item"><span class="dot type-a"></span> A Records</div>
+              <div class="legend-item"><span class="dot type-cname"></span> CNAME Records</div>
+              <div class="legend-item"><span class="dot type-mx"></span> MX Records</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- All Records -->
+    <section class="section" id="section-records">
+      <div class="card">
+        <div class="card-header">
+          <h2>All DNS Records</h2>
+          <div class="card-actions">
+            <select id="typeFilter" onchange="filterRecords()" class="select-input">
+              <option value="">All Types</option>
+              <option value="A">A</option>
+              <option value="CNAME">CNAME</option>
+              <option value="MX">MX</option>
+            </select>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table class="dns-table" id="allRecordsTable">
+            <thead>
+              <tr>
+                <th>Type</th>
+                <th>Name / Host</th>
+                <th>Value / Target</th>
+                <th>TTL</th>
+                <th>Priority</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="allRecordsTbody"></tbody>
+          </table>
+          <div class="empty-state" id="emptyAll">No records found. Click <strong>+ Add Record</strong> to get started.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- A Records -->
+    <section class="section" id="section-a-records">
+      <div class="card">
+        <div class="card-header">
+          <h2><span class="type-badge type-a">A</span> A Records</h2>
+          <button class="btn btn-sm btn-primary" onclick="openModal('A')">+ Add A Record</button>
+        </div>
+        <div class="table-wrap">
+          <table class="dns-table">
+            <thead><tr><th>Name</th><th>IP Address</th><th>TTL</th><th>Actions</th></tr></thead>
+            <tbody id="aTbody"></tbody>
+          </table>
+          <div class="empty-state" id="emptyA">No A records yet.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CNAME Records -->
+    <section class="section" id="section-cname-records">
+      <div class="card">
+        <div class="card-header">
+          <h2><span class="type-badge type-cname">CNAME</span> CNAME Records</h2>
+          <button class="btn btn-sm btn-primary" onclick="openModal('CNAME')">+ Add CNAME Record</button>
+        </div>
+        <div class="table-wrap">
+          <table class="dns-table">
+            <thead><tr><th>Host Name</th><th>Alias To</th><th>TTL</th><th>Actions</th></tr></thead>
+            <tbody id="cnameTbody"></tbody>
+          </table>
+          <div class="empty-state" id="emptyCNAME">No CNAME records yet.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- MX Records -->
+    <section class="section" id="section-mx-records">
+      <div class="card">
+        <div class="card-header">
+          <h2><span class="type-badge type-mx">MX</span> MX Records</h2>
+          <button class="btn btn-sm btn-primary" onclick="openModal('MX')">+ Add MX Record</button>
+        </div>
+        <div class="table-wrap">
+          <table class="dns-table">
+            <thead><tr><th>Name</th><th>Mail Server</th><th>Priority</th><th>TTL</th><th>Actions</th></tr></thead>
+            <tbody id="mxTbody"></tbody>
+          </table>
+          <div class="empty-state" id="emptyMX">No MX records yet.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Settings -->
+    <section class="section" id="section-settings">
+      <div class="card settings-card">
+        <div class="card-header"><h2>General Settings</h2></div>
+        <div class="settings-form">
+          <label>Default Domain</label>
+          <input type="text" id="defaultDomain" class="input" placeholder="e.g. example.com" />
+
+          <label>Default TTL (seconds)</label>
+          <input type="number" id="defaultTTL" class="input" value="3600" min="60" />
+
+          <label>Auto-save Records to localStorage</label>
+          <label class="toggle">
+            <input type="checkbox" id="autoSave" checked />
+            <span class="slider"></span>
+          </label>
+
+          <button class="btn btn-primary" onclick="saveSettings()">Save Settings</button>
+          <button class="btn btn-danger" onclick="clearAllRecords()">&#9888; Clear All Records</button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Add / Edit Modal -->
+  <div class="modal-overlay" id="modalOverlay" onclick="closeModalOutside(event)">
+    <div class="modal" id="modal" role="dialog" aria-modal="true">
+      <div class="modal-header">
+        <h3 id="modalTitle">Add DNS Record</h3>
+        <button class="modal-close" onclick="closeModal()" aria-label="Close">&#10005;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Record Type</label>
+          <select id="recordType" class="select-input" onchange="updateFormFields()">
+            <option value="A">A — IPv4 Address</option>
+            <option value="CNAME">CNAME — Alias</option>
+            <option value="MX">MX — Mail Exchange</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label id="nameLabel">Name / Host</label>
+          <input type="text" id="recordName" class="input" placeholder="@ or subdomain (e.g. www)" />
+        </div>
+        <div class="form-group">
+          <label id="valueLabel">Value</label>
+          <input type="text" id="recordValue" class="input" placeholder="e.g. 192.168.1.1" />
+        </div>
+        <div class="form-group" id="priorityGroup" style="display:none">
+          <label>Priority</label>
+          <input type="number" id="recordPriority" class="input" placeholder="10" value="10" min="0" />
+        </div>
+        <div class="form-group">
+          <label>TTL (seconds)</label>
+          <select id="recordTTL" class="select-input">
+            <option value="300">300 — 5 minutes</option>
+            <option value="900">900 — 15 minutes</option>
+            <option value="3600" selected>3600 — 1 hour</option>
+            <option value="86400">86400 — 1 day</option>
+            <option value="custom">Custom…</option>
+          </select>
+          <input type="number" id="customTTL" class="input" style="display:none;margin-top:8px" placeholder="Enter TTL in seconds" />
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+        <button class="btn btn-primary" id="saveBtn" onclick="saveRecord()">Save Record</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notifications -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
